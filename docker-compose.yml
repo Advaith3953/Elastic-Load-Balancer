@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - lb-net
+
+  backend:
+    build: ./backend
+    environment:
+      - APP_NAME=backend
+    expose:
+      - "5000"
+    networks:
+      - lb-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - lb-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3031:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - lb-net
+
+networks:
+  lb-net:
+    driver: bridge
